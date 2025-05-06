@@ -1,9 +1,9 @@
 "use client"
 
-import { SignInButton, UserButton } from "@clerk/clerk-react";
-import { Authenticated, Unauthenticated, AuthLoading, useQuery, useMutation } from "convex/react";
-import { ModeToggle } from "@/components/theme-toggle";
+
 import Image from "next/image";
+import { HeaderActions } from "./header-action";
+import { ModeToggle } from "@/components/theme-toggle";
 
 
 export function Header() {
@@ -18,18 +18,9 @@ export function Header() {
                 BIGBIN
             </div>
 
-            <div>
-                <Unauthenticated>
-                    <SignInButton />
-                </Unauthenticated>
-                <Authenticated>
-                    <div className="flex gap-4">
-                    <UserButton />
-
-                    <ModeToggle />
-                    </div>
-
-                </Authenticated>
+            <div className="flex items-center gap-4 justify-center">
+            <ModeToggle />
+               <HeaderActions/>
             </div>
 
         </div>

@@ -1,37 +1,39 @@
 "use client"
 
-import { SignInButton, UserButton } from "@clerk/clerk-react";
-import { Authenticated, Unauthenticated, AuthLoading, useQuery, useMutation } from "convex/react";
+
+import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import { Button } from "@/components/ui/button";
-import {ModeToggle} from "@/components/theme-toggle";
+import { DocumentCard } from "./document-card";
+import { CreateDocumentButton } from "./create-document-button";
 export default function Home() {
 
   const getDocument = useQuery(api.document.getDocument)
-  const createDocument = useMutation(api.document.createDocument)
 
-  
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-      <Unauthenticated>
-        <SignInButton />
-      </Unauthenticated>
-      <Authenticated>
-        <UserButton />
+
+    <main className="p-24 space-y-8">
+
+      <div className="flex justify-between 
+      items-center">
+
+        <h1 className="text-4xl font-bold">My Documents</h1>
+
+        <CreateDocumentButton />
+      </div>
+
+
+      <div className="grid grid-cols-4 gap-4">
         {
+
           getDocument?.map(doc => (
-            <div key={doc._id}>{doc.title}</div>
+            <DocumentCard document={doc} key={doc._id} />
           ))
         }
-        <ModeToggle/>
-        <Button
-       
-        onClick={() => createDocument({title: "Hello Wrold"})}>Click me!</Button>
-      </Authenticated>
-   
-      </main>
-    </div>
+      </div>
+
+
+    </main>
   );
 }
 
