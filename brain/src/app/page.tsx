@@ -4,7 +4,7 @@
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { DocumentCard } from "./document-card";
-import { CreateDocumentButton } from "./create-document-button";
+import { UploadDocumentButton } from "./upload-document-button";
 export default function Home() {
 
   const getDocument = useQuery(api.document.getDocument)
@@ -19,7 +19,7 @@ export default function Home() {
 
         <h1 className="text-4xl font-bold">My Documents</h1>
 
-        <CreateDocumentButton />
+        <UploadDocumentButton />
       </div>
 
 
