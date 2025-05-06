@@ -3,8 +3,8 @@
 import { SignInButton, UserButton } from "@clerk/clerk-react";
 import { Authenticated, Unauthenticated, AuthLoading, useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
-
-
+import { Button } from "@/components/ui/button";
+import {ModeToggle} from "@/components/theme-toggle";
 export default function Home() {
 
   const getDocument = useQuery(api.document.getDocument)
@@ -24,7 +24,10 @@ export default function Home() {
             <div key={doc._id}>{doc.title}</div>
           ))
         }
-        <button onClick={() => createDocument({title: "Hello Wrold"})}>Click me!</button>
+        <ModeToggle/>
+        <Button
+       
+        onClick={() => createDocument({title: "Hello Wrold"})}>Click me!</Button>
       </Authenticated>
    
       </main>
@@ -32,7 +35,4 @@ export default function Home() {
   );
 }
 
-//  function Content() {
-//   const messages = useQuery(api.messages.getForCurrentUser);
-//   return <div>Authenticated content: {messages?.length}</div>;
-// }
+
