@@ -20,6 +20,6 @@
     "isolatedModules": true,
     "noEmit": true
   },
-  "include": ["./**/*"],
+  "include": ["./**/*", "../src/app/documents/[documentId]/document-tab.tsx"],
   "exclude": ["./_generated"]
 }

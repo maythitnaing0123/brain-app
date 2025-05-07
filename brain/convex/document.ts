@@ -1,6 +1,15 @@
 import { ConvexError, v } from "convex/values";
-import { mutation, query } from "./_generated/server";
-
+import {
+  action,
+  internalQuery,
+  mutation,
+  MutationCtx,
+  query,
+  QueryCtx,
+} from "./_generated/server";
+import { api, internal } from "./_generated/api";
+import { GoogleGenAI } from "@google/genai";
+import { Id } from "./_generated/dataModel";
 
 //to upload url.
 export const generateUploadUrl = mutation({
@@ -8,8 +17,6 @@ export const generateUploadUrl = mutation({
     return await ctx.storage.generateUploadUrl();
   },
 });
-
-
 
 // one table - accept all fun.
 //get,update,delete.
@@ -30,36 +37,51 @@ export const getDocument = query({
   },
 });
 
+export async function hasAccessToDocument(
+  ctx: MutationCtx | QueryCtx,
+  documentId: Id<"documents">
+) {
+  const userId = (await ctx.auth.getUserIdentity())?.tokenIdentifier;
 
-export const getDocumentByID = query({
+  if (!userId) {
+    return null;
+  }
+
+  const document = await ctx.db.get(documentId);
+
+  if (!document || document.tokenIdentifier !== userId) {
+    return null;
+  }
+
+  return {document , userId};
+}
+
+export  const hasAccessToDocumentQuery = internalQuery({
   args: {
     documentId : v.id("documents")
   },
-  async handler(ctx , args) {
+  handler: async(ctx , args) => {
+
+    return await hasAccessToDocument(ctx , args.documentId)
+
+  }
+})
+
+export const getDocumentByID = query({
+  args: {
+    documentId: v.id("documents"),
+  },
+  async handler(ctx, args) {
     const userId = (await ctx.auth.getUserIdentity())?.tokenIdentifier;
 
+    const accessObject = await hasAccessToDocument(ctx, args.documentId);
 
-    if(!userId){
+    if (!accessObject) {
       return null;
     }
 
-    const document = await ctx.db.get(args.documentId);
-
-    
-    if(!document){
-      return null;
-    }
-
-
-
-    if (userId !== document?.tokenIdentifier) {
-      return null;
-    }
-
-    
-
-     return {...document , fileUrl : await  ctx.storage.getUrl(document.fileId)};
-
+    const {document} = accessObject!
+    return { ...document, fileUrl: await ctx.storage.getUrl(document.fileId) };
   },
 });
 
@@ -67,7 +89,7 @@ export const getDocumentByID = query({
 export const createDocument = mutation({
   args: {
     title: v.string(),
-    fileId : v.id("_storage"),
+    fileId: v.id("_storage"),
   },
   handler: async (ctx, args) => {
     const userId = (await ctx.auth.getUserIdentity())?.tokenIdentifier;
@@ -79,7 +101,69 @@ export const createDocument = mutation({
     await ctx.db.insert("documents", {
       title: args.title,
       tokenIdentifier: userId,
-      fileId : args.fileId
+      fileId: args.fileId,
     });
+  },
+});
+
+export const askQuestion = action({
+  args: {
+    question: v.string(),
+    documentId: v.id("documents"),
+  },
+  handler: async (ctx, args) => {
+    
+    const accessObject = await ctx.runQuery(internal.document.hasAccessToDocumentQuery , {
+     documentId: args.documentId
+    })
+
+
+    if (!accessObject) {
+      throw new ConvexError("You don't have access to this document!");
+    }
+
+    const {document , userId} = accessObject!
+
+
+    const file = await ctx.storage.get(document?.fileId);
+
+    const fileText = await file?.text().then((data) => data);
+
+    if (!file) {
+      throw new ConvexError("File not found!");
+    }
+
+    const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API });
+
+    try {
+      const response = await ai.models.generateContent({
+        model: "gemini-2.0-flash",
+        contents: args.question,
+        config: {
+          systemInstruction: `Here is a text file ${fileText} ,
+       please respond based on the provided text.Donot quote directly. Instead provide answer in a conversation tone`,
+        },
+      });
+
+      let responseBySystem = response.text ?? "Can't generate a response...";
+
+      await ctx.runMutation(internal.chats.createChatRecord, {
+        documentId: document._id,
+        tokenIdentifier: document?.tokenIdentifier,
+        text: args.question,
+        isHuman: true,
+      });
+
+      await ctx.runMutation(internal.chats.createChatRecord, {
+        documentId: document._id,
+        tokenIdentifier: document?.tokenIdentifier,
+        text: responseBySystem,
+        isHuman: false,
+      });
+
+      return responseBySystem;
+    } catch (error) {
+      console.log("error", error);
+    }
   },
 });

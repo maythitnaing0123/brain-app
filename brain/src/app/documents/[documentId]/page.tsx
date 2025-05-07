@@ -4,7 +4,8 @@ import { api } from "../../../../convex/_generated/api";
 import { useQuery } from "convex/react";
 import { Id } from "../../../../convex/_generated/dataModel";
 import { use } from "react";
-import { useAuth } from "@clerk/nextjs";
+import ChatPanel from "./chat-panel";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 
 export default function DocumentPage({ params }:
@@ -17,34 +18,47 @@ export default function DocumentPage({ params }:
     })
 
 
-    if (document === undefined) return <div className="flex justify-center text-center">Loading...</div>;
+    if (document === undefined && !Array.isArray(document))
+         return <div className="flex justify-center text-center mt-[20%]">Loading...</div>;
 
-    if (!document) {
-        return <div>You don't have access to view this
-            document
-        </div>
-    }
 
     return (
-        <main className="p-24 space-y-8">
+        <main className="p-20 pb-0 space-y-8">
             <div className="flex justify-between items-center">
                 <h1 className="text-4xl font-bold">{document?.title}</h1>
             </div>
 
             <div className="flex gap-12">
 
-                <div className="flex flex-1 bg-slate-900 h-[600px] p-4 rounded-md">
 
-                    {document.fileUrl && (
-                        <iframe className="w-full"
-                            src={document.fileUrl} />
+                <Tabs defaultValue="document" className="w-full" >
+                    <TabsList className="mb-2">
+                        <TabsTrigger value="document" className="w-fit">Document</TabsTrigger>
+                        <TabsTrigger value="chat">Chat</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="document" className="w-full">
+                        <div className="flex flex-1 bg-slate-900 h-[600px]
+                         p-4 rounded-md">
 
-                    )}
-                </div>
+                            {document?.fileUrl && (
+                                <iframe className="w-full whitespace-pre-line"
+                                    src={document.fileUrl} />
 
-                <div className="w-[300px] bg-gray-900">
+                            )}
+                        </div>
+                    </TabsContent>
+                    <TabsContent value="chat">
+                         {document && <ChatPanel documentId={document?._id} />}
+                    </TabsContent>
+                </Tabs>
 
-                </div>
+
+
+
+
+                {/* end */}
+
+
 
             </div>
 
