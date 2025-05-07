@@ -8,6 +8,10 @@ import ChatPanel from "./chat-panel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Trash2Icon } from "lucide-react";
+import { btnIconStyles, btnStyles } from "../../../../styles/styles";
+import { DeleteButtonComponent } from "./delete-button";
 
 
 export default function DocumentPage({ params }:
@@ -31,9 +35,9 @@ export default function DocumentPage({ params }:
                     <Skeleton className="h-[40px] w-[500px]" />
 
                     <div className="flex gap-3">
-                    <Skeleton className="h-[20px] w-[150px] " />
+                        <Skeleton className="h-[20px] w-[150px] " />
 
-                    <Skeleton className="h-[20px] w-[100px] " />
+                        <Skeleton className="h-[20px] w-[100px] " />
                     </div>
 
                     <Skeleton className="h-[500px] w-full " />
@@ -47,6 +51,9 @@ export default function DocumentPage({ params }:
 
                         <div className="flex justify-between items-center">
                             <h1 className="text-4xl font-bold">{document?.title}</h1>
+
+                            <DeleteButtonComponent documentId={document._id} />
+
                         </div>
 
                         <div className="flex gap-12">
