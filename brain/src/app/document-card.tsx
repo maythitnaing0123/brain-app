@@ -18,11 +18,10 @@ export function DocumentCard({
     return <>
         <Card>
             <CardHeader>
-                <CardTitle>{document.title}</CardTitle>
-                <CardDescription></CardDescription>
+                <CardTitle className="fond-bold text-2xl">{document.title}</CardTitle>
             </CardHeader>
             <CardContent>
-                <p>Card Content</p>
+                <p>{document.description}</p>
             </CardContent>
             <CardFooter>
                 <Button

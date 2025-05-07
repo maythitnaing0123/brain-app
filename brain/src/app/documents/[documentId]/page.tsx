@@ -6,6 +6,8 @@ import { Id } from "../../../../convex/_generated/dataModel";
 import { use } from "react";
 import ChatPanel from "./chat-panel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 
 export default function DocumentPage({ params }:
@@ -18,49 +20,74 @@ export default function DocumentPage({ params }:
     })
 
 
-    if (document === undefined && !Array.isArray(document))
-         return <div className="flex justify-center text-center mt-[20%]">Loading...</div>;
-
 
     return (
         <main className="p-20 pb-0 space-y-8">
-            <div className="flex justify-between items-center">
-                <h1 className="text-4xl font-bold">{document?.title}</h1>
-            </div>
 
-            <div className="flex gap-12">
+            {
+                document === undefined && !Array.isArray(document) &&
+                <div className="p-6 flex flex-col space-y-3">
 
+                    <Skeleton className="h-[40px] w-[500px]" />
 
-                <Tabs defaultValue="document" className="w-full" >
-                    <TabsList className="mb-2">
-                        <TabsTrigger value="document" className="w-fit">Document</TabsTrigger>
-                        <TabsTrigger value="chat">Chat</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="document" className="w-full">
-                        <div className="flex flex-1 bg-slate-900 h-[600px]
-                         p-4 rounded-md">
+                    <div className="flex gap-3">
+                    <Skeleton className="h-[20px] w-[150px] " />
 
-                            {document?.fileUrl && (
-                                <iframe className="w-full whitespace-pre-line"
-                                    src={document.fileUrl} />
+                    <Skeleton className="h-[20px] w-[100px] " />
+                    </div>
 
-                            )}
+                    <Skeleton className="h-[500px] w-full " />
+
+                </div>
+            }
+            {
+                document && (
+
+                    <>
+
+                        <div className="flex justify-between items-center">
+                            <h1 className="text-4xl font-bold">{document?.title}</h1>
                         </div>
-                    </TabsContent>
-                    <TabsContent value="chat">
-                         {document && <ChatPanel documentId={document?._id} />}
-                    </TabsContent>
-                </Tabs>
+
+                        <div className="flex gap-12">
+
+
+                            <Tabs defaultValue="document" className="w-full" >
+                                <TabsList className="mb-2">
+                                    <TabsTrigger value="document" className="w-fit">Document</TabsTrigger>
+                                    <TabsTrigger value="chat">Chat</TabsTrigger>
+                                </TabsList>
+                                <TabsContent value="document" className="w-full">
+                                    <div className="flex flex-1 bg-slate-900 h-[600px]
+                             p-4 rounded-md">
+
+                                        {document?.fileUrl && (
+                                            <iframe className="w-full whitespace-pre-line"
+                                                src={document.fileUrl} />
+
+                                        )}
+                                    </div>
+                                </TabsContent>
+                                <TabsContent value="chat">
+                                    {document && <ChatPanel documentId={document?._id} />}
+                                </TabsContent>
+                            </Tabs>
 
 
 
 
 
-                {/* end */}
+                            {/* end */}
 
 
 
-            </div>
+                        </div>
+
+                    </>
+
+                )
+            }
+
 
         </main>
     )

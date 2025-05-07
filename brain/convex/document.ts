@@ -1,6 +1,8 @@
 import { ConvexError, v } from "convex/values";
 import {
   action,
+  internalAction,
+  internalMutation,
   internalQuery,
   mutation,
   MutationCtx,
@@ -53,19 +55,17 @@ export async function hasAccessToDocument(
     return null;
   }
 
-  return {document , userId};
+  return { document, userId };
 }
 
-export  const hasAccessToDocumentQuery = internalQuery({
+export const hasAccessToDocumentQuery = internalQuery({
   args: {
-    documentId : v.id("documents")
+    documentId: v.id("documents"),
   },
-  handler: async(ctx , args) => {
-
-    return await hasAccessToDocument(ctx , args.documentId)
-
-  }
-})
+  handler: async (ctx, args) => {
+    return await hasAccessToDocument(ctx, args.documentId);
+  },
+});
 
 export const getDocumentByID = query({
   args: {
@@ -80,8 +80,65 @@ export const getDocumentByID = query({
       return null;
     }
 
-    const {document} = accessObject!
+    const { document } = accessObject!;
     return { ...document, fileUrl: await ctx.storage.getUrl(document.fileId) };
+  },
+});
+
+//fill/update Description
+export const fillInDescription = internalAction({
+  args: {
+    documentId: v.id("documents"),
+    fileId: v.id("_storage"),
+  },
+  handler: async (ctx, args) => {
+    const file = await ctx.storage.get(args.fileId);
+
+    if (!file) {
+      throw new ConvexError("File not found!");
+    }
+
+    const fileText = await file?.text().then((data) => data);
+
+    if (!file) {
+      throw new ConvexError("File not found!");
+    }
+
+    const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API });
+
+    try {
+      const response = await ai.models.generateContent({
+        model: "gemini-2.0-flash",
+        contents: ` please respond 1 sentence description based on the provided text.Donot quote directly. Instead provide answer in a conversation tone`,
+        config: {
+          systemInstruction: `Here is a text file ${fileText} ,
+`,
+        },
+      });
+
+      let responseBySystem = response.text ?? "Can't generate a response...";
+
+      await ctx.runMutation(internal.document.updateDocumentDescription, {
+        documentId: args.documentId,
+        description: responseBySystem,
+      });
+
+
+    } catch (error) {
+      console.log(error);
+    }
+  },
+});
+
+export const updateDocumentDescription = internalMutation({
+  args: {
+    documentId: v.id("documents"),
+    description: v.string(),
+  },
+  handler: async (ctx, args) => {
+    return ctx.db.patch(args.documentId , {
+      description: args.description
+    });
   },
 });
 
@@ -98,11 +155,21 @@ export const createDocument = mutation({
       throw new ConvexError("Not Authenticated");
     }
 
-    await ctx.db.insert("documents", {
+   const documentId =  await ctx.db.insert("documents", {
       title: args.title,
       tokenIdentifier: userId,
       fileId: args.fileId,
+      description: "",
     });
+
+    if(!documentId){
+      return null
+    }
+
+    await ctx.scheduler.runAfter(0 , internal.document.fillInDescription , {
+      documentId,
+      fileId: args.fileId
+    })
   },
 });
 
@@ -112,18 +179,18 @@ export const askQuestion = action({
     documentId: v.id("documents"),
   },
   handler: async (ctx, args) => {
-    
-    const accessObject = await ctx.runQuery(internal.document.hasAccessToDocumentQuery , {
-     documentId: args.documentId
-    })
-
+    const accessObject = await ctx.runQuery(
+      internal.document.hasAccessToDocumentQuery,
+      {
+        documentId: args.documentId,
+      }
+    );
 
     if (!accessObject) {
       throw new ConvexError("You don't have access to this document!");
     }
 
-    const {document , userId} = accessObject!
-
+    const { document, userId } = accessObject!;
 
     const file = await ctx.storage.get(document?.fileId);
 
